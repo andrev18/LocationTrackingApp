@@ -13,11 +13,19 @@ import io.reactivex.schedulers.Schedulers
  * Created by avlad on 27.01.2018.
  */
 class LocationViewModel : BaseViewModel() {
-
+    /*
+    Livedata holder of the location points
+     */
     val onNewLocationEntries: MutableLiveData<MutableList<LatLng>> = MutableLiveData()
+    /*
+    Flag which keeps tracking if the viewmodel subscribed to the datalayer changes
+     */
     var subscribedToDataChanges = false
 
 
+    /*
+    Get the location points from database
+     */
     fun loadLocationPoints() {
         if (!subscribedToDataChanges) {
             DataProvider
@@ -25,15 +33,13 @@ class LocationViewModel : BaseViewModel() {
                 doOnSubscribe {
                     subscribedToDataChanges = true
                     disposables?.add(it)
-                }.subscribeOn(Schedulers.io()).
-                        observeOn(AndroidSchedulers.mainThread()).
-                        map {
-                            val listOfLatLng = ArrayList<LatLng>()
-                            for (location in it) {
-                                listOfLatLng.add(LatLng(location.latitude!!, location.longitude!!))
-                            }
-                            return@map listOfLatLng
-                        }
+                }.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).map {
+                    val listOfLatLng = ArrayList<LatLng>()
+                    for (location in it) {
+                        listOfLatLng.add(LatLng(location.latitude!!, location.longitude!!))
+                    }
+                    return@map listOfLatLng
+                }
                         .subscribe({
                             onNewLocationEntries.value = it
                             subscribeToDatabaseChanges()
@@ -47,9 +53,11 @@ class LocationViewModel : BaseViewModel() {
 
     }
 
+    /*
+    Subscribe to data layer changes
+     */
     private fun subscribeToDatabaseChanges() {
-        DataProvider.locationEntryRepository?.
-                onNewItemsInserted?.run {
+        DataProvider.locationEntryRepository?.onNewItemsInserted?.run {
             subscribeOn(Schedulers.io())
             observeOn(AndroidSchedulers.mainThread())
                     .doOnSubscribe {

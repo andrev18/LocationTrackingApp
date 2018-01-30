@@ -16,10 +16,23 @@ import io.reactivex.schedulers.Schedulers
  * Created by avlad on 27.01.2018.
  */
 class LocationService : Service() {
+    /*
+    Flag for avoiding restarting the service. Once started, this variable becomes true
+     */
+    private var isStarted = false;
 
+    /*
+    Location Request Builder object
+     */
     private val locationRequest = LocationRequest()
+    /*
+    Location Service Provider
+     */
     private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
+    /*
+    Disposable list for managing the database queries
+     */
     private val disposables: CompositeDisposable? = CompositeDisposable()
 
 
@@ -29,37 +42,52 @@ class LocationService : Service() {
 
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if(!isStarted) {
 
-        locationRequest.interval = 1
-        locationRequest.fastestInterval = 1
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            /*
+            Configure the location request
+             */
+            locationRequest.interval = 1
+            locationRequest.fastestInterval = 1
+            locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
 
 
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult?) {
-                super.onLocationResult(locationResult)
-                Completable.fromAction({
-                    DataProvider.locationEntryRepository?.insert(LocationEntry(locationResult?.lastLocation))
-                })
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnSubscribe {
-                            disposables?.add(it)
-                        }
-                        .subscribe()
+            /*
+            Starting the Location Provider
+             */
+            fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+            locationCallback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult?) {
+                    super.onLocationResult(locationResult)
+                    /*
+                    On location available -> insert the location in database
+                     */
+                    Completable.fromAction({
+                        DataProvider.locationEntryRepository?.insert(LocationEntry(locationResult?.lastLocation))
+                    })
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .doOnSubscribe {
+                                disposables?.add(it)
+                            }
+                            .subscribe()
+                }
+
+                override fun onLocationAvailability(locationAvailability: LocationAvailability?) {
+                    super.onLocationAvailability(locationAvailability)
+                }
             }
-
-            override fun onLocationAvailability(locationAvailability: LocationAvailability?) {
-                super.onLocationAvailability(locationAvailability)
-            }
+            fusedLocationProviderClient?.requestLocationUpdates(locationRequest, locationCallback, null)
+            isStarted = true
         }
-        fusedLocationProviderClient?.requestLocationUpdates(locationRequest, locationCallback, null)
         return START_STICKY
     }
 
 
     override fun onDestroy() {
+        /*
+        Releaase database queries on service destroy
+         */
         disposables?.run {
             if (!isDisposed) {
                 disposables.dispose()

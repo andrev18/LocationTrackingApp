@@ -45,7 +45,7 @@ class LocationActivity : BaseActivity<LocationViewModel>(), OnMapReadyCallback {
                             map?.run {
                                 val polyLineOptions = PolylineOptions()
                                         .addAll(it)
-                                        .color(Color.RED)
+                                        .color(Color.MAGENTA)
                                         .geodesic(true)
                                         .width(20f)
                                 route = addPolyline(polyLineOptions)

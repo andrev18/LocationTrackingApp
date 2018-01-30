@@ -8,6 +8,9 @@ import io.reactivex.disposables.CompositeDisposable
  */
 abstract class BaseViewModel : ViewModel() {
 
+    /*
+    Disposable list for managing the RxJava subscriptions
+     */
     val disposables: CompositeDisposable? = CompositeDisposable()
 
     override fun onCleared() {

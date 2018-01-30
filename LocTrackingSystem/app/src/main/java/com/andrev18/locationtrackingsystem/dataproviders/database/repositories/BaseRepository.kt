@@ -11,6 +11,9 @@ import io.reactivex.subjects.PublishSubject
  */
 
 abstract class BaseRepository<DAO : BaseDao, ENTITY>(val dao: DAO) {
+    /*
+    Observable whose subscribers are notified on new database inserts
+     */
     val onNewItemsInserted: PublishSubject<ENTITY> = PublishSubject.create<ENTITY>()
 
     fun getOnNewItemsInserted(): Observable<ENTITY> {

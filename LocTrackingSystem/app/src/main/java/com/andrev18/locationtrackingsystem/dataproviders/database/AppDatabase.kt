@@ -13,6 +13,9 @@ import com.andrev18.locationtrackingsystem.dataproviders.database.daos.LocationE
 @Database(entities = arrayOf(LocationEntry::class), version = 1)
 abstract class AppDatabase : RoomDatabase() {
 
+    /*
+    Database initialization
+     */
     companion object {
         const val TABLE_LOCATION_ENTRIES:String = "table_location_entries"
         fun instantiate(app: App): AppDatabase {
